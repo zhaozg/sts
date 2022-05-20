@@ -366,6 +366,42 @@ static const char * const usage2 =
 "                       If randdata is -, data is read from the beginning standard input. No seek for -j jobnum is performed.\n";
 /* *INDENT-ON* */
 
+#ifdef _WIN32
+/*
+ * Get next token from string *stringp, where tokens are possibly-empty
+ * strings separated by characters from delim.
+ *
+ * Writes NULs into the string at *stringp to end tokens.
+ * delim need not remain constant from call to call.
+ * On return, *stringp points past the last NUL written (if there might
+ * be further tokens), or is NULL (if there are definitely no moretokens).
+ *
+ * If *stringp is NULL, strsep returns NULL.
+ */
+char *strsep(char **stringp, const char *delim)
+{
+	char *s;
+	int sc;
+	char *tok;
+	if ((s = *stringp)== NULL)
+		return (NULL);
+	for (tok = s;;) {
+		int c = *s++;
+		const char *spanp = delim;
+		do {
+			if ((sc =*spanp++) == c) {
+				if (c == 0)
+					s = NULL;
+				else
+					s[-1] = 0;
+				*stringp = s;
+				return (tok);
+			}
+		} while (sc != 0);
+	}
+	/* NOTREACHED */
+}
+#endif
 
 /*
  * parse_args - parse command line arguments and setup run state
@@ -807,18 +843,22 @@ parse_args(struct state *state, int argc, char **argv)
 	 * between the number of bitstreams and the number of cores of the computer where sts is running.
 	 */
 	else if (state->numberOfThreadsFlag == false) {
+#ifndef _WIN32
 		state->numberOfThreads = MIN(sysconf(_SC_NPROCESSORS_ONLN), state->tp.numOfBitStreams);
+#endif
 	}
 
 	/*
 	 * If a custom number of threads was set and this number is greater than the number of processors
 	 * in the computer where sts is running, fire a warning to the user that this will not benefit sts.
 	 */
+#ifndef _WIN32
 	if (state->numberOfThreadsFlag == true && state->numberOfThreads > sysconf(_SC_NPROCESSORS_ONLN)) {
 		warn(__func__, "You selected a number of threads which is greater than the number of cores in this computer."
 				     " For better performance, you should choose a number of threads < %ld.",
 		     sysconf(_SC_NPROCESSORS_ONLN));
 	}
+#endif
 
 	/*
 	 * If a custom number of threads was set and this number is greater than the number of bitstreams

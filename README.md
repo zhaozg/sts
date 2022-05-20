@@ -10,6 +10,10 @@ STS can be useful in:
 - Evaluating the randomness of bitstreams produced by hardware and software key generators for cryptographic applications.
 - Evaluating the quality of pseudo random number generators used in simulation and modeling applications.
 
+## Forks update
+
+1. support cross compile build with mingw-w64 for windows.
+
 ## Usage
 
 ### Requirements
