@@ -54,6 +54,78 @@
 #include "utilities.h"
 #include "debug.h"
 
+#ifdef _WIN32
+#include <io.h>
+#define mkdir(p, f) mkdir((p))
+#define faccessat(d, p, m, f) _access((p),(m))
+#endif
+
+#if defined(_WIN64) || defined(_WIN32)
+
+ssize_t
+getdelim(char **lineptr, size_t *n, int delim, FILE *stream)
+{
+  char c, *cp, *new_lineptr;
+
+  if (lineptr == NULL || n == NULL || stream == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (*lineptr == NULL) {
+    *n = 128;
+    if ((*lineptr = (char *)malloc(*n)) == NULL) {
+      errno = ENOMEM;
+      return -1;
+    }
+  }
+
+  cp = *lineptr;
+  for (;;) {
+
+    c = getc(stream);
+    if (ferror(stream) || (c == EOF && cp == *lineptr))
+      return -1;
+
+    if (c == EOF)
+      break;
+
+    if ((*lineptr + *n - cp) < 2) {
+#ifdef _POSIX_
+      if (SSIZE_MAX / 2 < *n) {
+#else
+      if (SIZE_MAX / 2 < *n) {
+#endif
+        #ifdef EOVERFLOW
+          errno = EOVERFLOW;
+        #else
+          errno = ERANGE;
+        #endif
+        return -1;
+      }
+      *n = *n * 2;
+      if ((new_lineptr = (char*)realloc(*lineptr, *n)) == NULL) {
+        errno = ENOMEM;
+        return -1;
+      }
+      cp = new_lineptr + (cp - *lineptr);
+      *lineptr = new_lineptr;
+    }
+    *cp++ = c;
+
+    if (c == delim)
+      break;
+  }
+  *cp = '\0';
+  return (size_t)(cp - *lineptr);
+}
+
+ssize_t
+getline(char **lineptr, size_t *n, FILE *stream)
+{
+  return getdelim(lineptr, n, '\n', stream);
+}
+#endif
 
 /*
  * Forward static function declarations
@@ -1921,10 +1993,14 @@ getTimestamp(char *buf, size_t len)
 	if (seconds < 0) {
 		errp(229, __func__, "time returned < 0: %ld", seconds);
 	}
+#ifdef _WIN32
+	localtime_s(&now, &seconds);
+#else
 	loc_ret = localtime_r(&seconds, &now);
 	if (loc_ret == NULL) {
 		errp(229, __func__, "localtime_r returned NULL");
 	}
+#endif
 	errno = 0;		// paranoia
 	time_len = strftime(buf, len - 1, "%F %T", &now);
 	if (time_len == 0) {

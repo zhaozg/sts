@@ -26,7 +26,11 @@
 # utilities
 #
 SHELL= bash
+ifdef HOSTCC
+CC= ${HOSTCC}
+else
 CC= cc
+endif
 INSTALL= install
 UNCOMPRESS= uncompress
 RM= rm
@@ -54,7 +58,9 @@ LIBS= -lm -L/usr/local/lib -lfftw3 -pthread
 OPT= -O3
 #DEBUG=
 DEBUG= -g3
+ifndef HOSTCC
 LOC_INC= -I /usr/include -I /usr/global/include -I /usr/local/include
+endif
 #CFLAGS= -std=c99 -D_ISOC99_SOURCE -Wall -Werror -pedantic -DDEBUG_LINT ${LOC_INC} ${OPT} ${DEBUG}
 #CFLAGS= -std=c99 -D_ISOC99_SOURCE -Wall -Werror -pedantic ${LOC_INC} ${OPT} ${DEBUG}
 CFLAGS= -std=c99 -D_ISOC99_SOURCE -Wall -pedantic ${LOC_INC} ${OPT} ${DEBUG}

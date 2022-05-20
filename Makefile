@@ -89,6 +89,7 @@ ${SRC}/sts_legacy_fft:
 #
 clean:
 	cd ${SRC}; $(MAKE) $@ ${PASSDOWN_VARS}
+	rm -f ./sts
 
 clobber:
 	cd ${SRC}; $(MAKE) $@ ${PASSDOWN_VARS}
