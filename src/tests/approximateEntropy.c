@@ -395,8 +395,10 @@ compute_phi(struct thread_state *thread_state, long int blocksize)
 	 */
 	sum = 0.0;
 	for (i = 0; i < powLen; i++) {
-		sum += (double) state->apen_C[thread_state->thread_id][i] *
-				log(state->apen_C[thread_state->thread_id][i] / (double) n);
+		if (state->apen_C[thread_state->thread_id][i]) {
+			sum += (double) state->apen_C[thread_state->thread_id][i] *
+					log(state->apen_C[thread_state->thread_id][i] / (double) n);
+		}
 	}
 
 	/*
@@ -835,7 +837,7 @@ ApproximateEntropy_metric_print(struct state *state, long int sampleCount, long 
 	 * Compute uniformity p-value
 	 */
 	chi2 = 0.0;
-	expCount = sampleCount / state->tp.uniformity_bins;
+	expCount = (double)sampleCount / state->tp.uniformity_bins;
 	if (expCount <= 0.0) {
 		uniformity = 0.0;	// Not enough samples for uniformity check
 	} else {
